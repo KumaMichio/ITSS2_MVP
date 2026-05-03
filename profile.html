@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hồ sơ cá nhân - JobMatch JP</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="profile.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <a class="logo logo-link" href="index.html">
+        <span class="logo-flag">🇯🇵</span>
+        <span class="logo-text">JobMatch <strong>JP</strong></span>
+      </a>
+      <nav class="hdr-nav">
+        <a href="index.html" class="nav-back">← Danh sách việc làm</a>
+        <span class="nav-sep">|</span>
+        <span class="nav-current">Hồ sơ cá nhân</span>
+      </nav>
+      <div class="user-badge profile-active">
+        <div class="avatar" id="hdrAvatar">A</div>
+        <div class="user-info">
+          <span class="user-name" id="hdrName">Nguyen Van A</span>
+          <span class="user-sub" id="hdrSub">Java Dev · N3 · Tokyo</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="p-main">
+    <div class="p-wrap">
+
+      <!-- ── Hero ── -->
+      <div class="p-card p-hero">
+        <div class="hero-bg"></div>
+        <div class="hero-body">
+          <div class="hero-avatar-wrap">
+            <div class="hero-avatar" id="heroAvt">A</div>
+          </div>
+          <div class="hero-info">
+            <div class="hero-name"  id="heroName">Nguyen Van A</div>
+            <div class="hero-role"  id="heroRole">Java Developer</div>
+            <div class="hero-meta">
+              <span id="heroLoc">📍 Tokyo</span>
+              <span class="dot">·</span>
+              <span id="heroExp">💼 3 năm kinh nghiệm</span>
+              <span class="dot">·</span>
+              <span class="jp-pill" id="heroJp">N3</span>
+            </div>
+            <div class="hero-skills-preview" id="heroSkillsPreview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Stats ── -->
+      <div class="p-stats" id="pStats"></div>
+
+      <!-- ── JLPT ── -->
+      <div class="p-card">
+        <div class="pc-title">🗾 Trình độ tiếng Nhật</div>
+        <div class="jp-cards" id="jpCards"></div>
+        <div class="jp-hint"  id="jpHint"></div>
+      </div>
+
+      <!-- ── Skills ── -->
+      <div class="p-card">
+        <div class="pc-header">
+          <span class="pc-title">🛠 Kỹ năng</span>
+          <span class="skill-count" id="skillCount">0 kỹ năng</span>
+        </div>
+        <div class="skill-chips" id="skillChips"></div>
+        <div class="skill-add-row">
+          <input id="skillInput" type="text" class="skill-input" placeholder="Nhập kỹ năng mới..." />
+          <button id="addSkillBtn" class="btn-add-skill">+ Thêm</button>
+        </div>
+        <div class="suggestions">
+          <span class="sug-label">Gợi ý:</span>
+          <div id="suggestRow" class="sug-row"></div>
+        </div>
+      </div>
+
+      <!-- ── Basic info ── -->
+      <div class="p-card">
+        <div class="pc-title">👤 Thông tin cơ bản</div>
+        <div class="info-form">
+          <div class="form-row">
+            <label for="fName">Họ và tên</label>
+            <input id="fName" type="text" class="form-inp" />
+          </div>
+          <div class="form-row">
+            <label for="fRole">Vị trí / Chức danh</label>
+            <input id="fRole" type="text" class="form-inp" placeholder="VD: Java Developer, Frontend Engineer..." />
+          </div>
+          <div class="form-row-2">
+            <div class="form-row">
+              <label for="fExp">Kinh nghiệm</label>
+              <select id="fExp" class="form-inp">
+                <option value="Chưa có kinh nghiệm">Chưa có kinh nghiệm</option>
+                <option value="Dưới 1 năm">Dưới 1 năm</option>
+                <option value="1 năm">1 năm</option>
+                <option value="2 năm">2 năm</option>
+                <option value="3 năm">3 năm</option>
+                <option value="4 năm">4 năm</option>
+                <option value="5+ năm">5+ năm</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="fLoc">Địa điểm mong muốn</label>
+              <select id="fLoc" class="form-inp">
+                <option value="Tokyo">Tokyo</option>
+                <option value="Osaka">Osaka</option>
+                <option value="Kyoto">Kyoto</option>
+                <option value="Nagoya">Nagoya</option>
+                <option value="Fukuoka">Fukuoka</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Actions ── -->
+      <div class="p-actions">
+        <button class="btn-save"  onclick="saveProfile()">💾 Lưu thay đổi</button>
+        <button class="btn-reset" onclick="resetProfile()">↺ Đặt lại mặc định</button>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="profile.js"></script>
+</body>
+</html>
