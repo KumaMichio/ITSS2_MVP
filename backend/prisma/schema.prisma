@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile?
+  bookmarks Bookmark[]
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills          String[]
+  japaneseLevel   String?
+  location        String?
+  experienceYears Int?
+  currentTitle    String?
+  updatedAt       DateTime @updatedAt
+}
+
+model Company {
+  id          String  @id @default(cuid())
+  name        String
+  logo        String
+  logoColor   String
+  size        String?
+  founded     Int?
+  website     String?
+  linkedin    String?
+  description String?
+  reviewCount Int     @default(0)
+  glassdoor   Float?
+  trustScore  Int     @default(0)
+
+  jobs Job[]
+}
+
+model Job {
+  id            String   @id @default(cuid())
+  title         String
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id])
+  location      String
+  salaryMin     Int?
+  salaryMax     Int?
+  currency      String   @default("JPY")
+  type          String
+  postedAt      DateTime @default(now())
+  description   String
+  requireSkills String[]
+  requireJlpt   String?
+  requireExp    String?
+  requireEdu    String?
+  benefits      String[]
+  risks         String[]
+
+  bookmarks Bookmark[]
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+}

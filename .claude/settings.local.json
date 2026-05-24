@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"e:/Pet_project/ITSS2_mvp/backend/src/routes\" \"e:/Pet_project/ITSS2_mvp/backend/src/middleware\" \"e:/Pet_project/ITSS2_mvp/backend/src/lib\" \"e:/Pet_project/ITSS2_mvp/backend/prisma\")",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(npm create *)",
+      "Bash(npx tailwindcss *)"
+    ],
+    "additionalDirectories": [
+      "e:\\Pet_project\\ITSS2_mvp\\backend\\src"
+    ]
+  }
+}
