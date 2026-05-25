@@ -9,7 +9,7 @@ export default function AuthPage() {
   const [form, setForm] = useState({ email: '', password: '', name: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { setAuth } = useStore()
+  const { setAuth, fetchBookmarks } = useStore()
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,6 +21,7 @@ export default function AuthPage() {
       const payload = mode === 'login' ? { email: form.email, password: form.password } : form
       const { data } = await api.post(endpoint, payload)
       setAuth(data.user, data.token)
+      await fetchBookmarks()
       navigate('/dashboard')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error

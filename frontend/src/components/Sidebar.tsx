@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Briefcase, Brain, ShieldCheck, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Briefcase, Brain, ShieldCheck, Bookmark, Settings, LogOut } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { cn } from '../lib/utils'
 
@@ -7,6 +7,7 @@ const navItems = [
   { label: 'Workspace', items: [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/jobs', icon: Briefcase, label: 'Việc làm' },
+    { to: '/bookmarks', icon: Bookmark, label: 'Việc đã lưu' },
   ]},
   { label: 'Intelligence', items: [
     { to: '/insights', icon: Brain, label: 'Match Insights' },

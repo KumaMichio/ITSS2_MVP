@@ -1,9 +1,10 @@
-import { MapPin, Briefcase } from 'lucide-react'
+import { MapPin, Briefcase, Bookmark } from 'lucide-react'
 import type { Job } from '../types'
 import { formatSalary, timeAgo } from '../lib/utils'
 import CompanyBadge from './CompanyBadge'
 import TrustBadge from './TrustBadge'
 import MatchCircle from './MatchCircle'
+import { useStore } from '../store/useStore'
 
 interface Props {
   job: Job & { matchScore?: number }
@@ -13,6 +14,8 @@ interface Props {
 
 export default function JobCard({ job, onClick, variant = 'list' }: Props) {
   const score = job.matchScore ?? 0
+  const { bookmarkedIds, toggleBookmark } = useStore()
+  const isBookmarked = bookmarkedIds.has(job.id)
 
   return (
     <div
@@ -30,7 +33,15 @@ export default function JobCard({ job, onClick, variant = 'list' }: Props) {
                 {job.company.name} · {timeAgo(job.postedAt)}
               </p>
             </div>
-            <MatchCircle value={score} size={variant === 'grid' ? 52 : 48} />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={e => { e.stopPropagation(); toggleBookmark(job.id) }}
+                className={`p-1 rounded-lg transition-colors ${isBookmarked ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+              >
+                <Bookmark size={15} fill={isBookmarked ? 'currentColor' : 'none'} />
+              </button>
+              <MatchCircle value={score} size={variant === 'grid' ? 52 : 48} />
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">

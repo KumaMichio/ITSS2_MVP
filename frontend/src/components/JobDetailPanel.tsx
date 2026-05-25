@@ -1,9 +1,10 @@
-import { X, MapPin, Briefcase, Globe, ExternalLink, AlertTriangle, CheckCircle } from 'lucide-react'
+import { X, MapPin, Briefcase, Globe, ExternalLink, AlertTriangle, CheckCircle, Bookmark } from 'lucide-react'
 import type { Job, MatchResult } from '../types'
 import { formatSalary } from '../lib/utils'
 import CompanyBadge from './CompanyBadge'
 import TrustBadge from './TrustBadge'
 import MatchCircle from './MatchCircle'
+import { useStore } from '../store/useStore'
 
 interface Props {
   job: Job
@@ -27,6 +28,9 @@ function BreakdownBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function JobDetailPanel({ job, match, onClose }: Props) {
+  const { bookmarkedIds, toggleBookmark } = useStore()
+  const isBookmarked = bookmarkedIds.has(job.id)
+
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="fixed inset-0 bg-black/20" onClick={onClose} />
@@ -41,6 +45,12 @@ export default function JobDetailPanel({ job, match, onClose }: Props) {
               <TrustBadge score={job.company.trustScore} size="sm" />
             </div>
           </div>
+          <button
+            onClick={() => toggleBookmark(job.id)}
+            className={`p-1.5 rounded-lg transition-colors ${isBookmarked ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+          >
+            <Bookmark size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
+          </button>
           <button onClick={onClose} className="p-1.5 hover:bg-secondary rounded-lg transition-colors">
             <X size={18} />
           </button>

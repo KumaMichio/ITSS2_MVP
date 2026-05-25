@@ -5,7 +5,9 @@ import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
 import JobsPage from './pages/JobsPage'
 import ProfilePage from './pages/ProfilePage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import BookmarksPage from './pages/BookmarksPage'
+import InsightsPage from './pages/InsightsPage'
+import TrustPage from './pages/TrustPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { token } = useStore()
@@ -28,15 +30,10 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="jobs" element={<JobsPage />} />
+          <Route path="bookmarks" element={<BookmarksPage />} />
           <Route path="settings" element={<ProfilePage />} />
-          <Route
-            path="insights"
-            element={<PlaceholderPage title="Match Insights" description="Phân tích chi tiết xu hướng matching của bạn — sắp ra mắt." />}
-          />
-          <Route
-            path="trust"
-            element={<PlaceholderPage title="Trust Scores" description="Xếp hạng độ tin cậy tất cả công ty — sắp ra mắt." />}
-          />
+          <Route path="insights" element={<InsightsPage />} />
+          <Route path="trust" element={<TrustPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

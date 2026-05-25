@@ -1,11 +1,11 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
-import { authMiddleware, AuthRequest } from '../middleware/auth'
+import { authMiddleware, optionalAuth, AuthRequest } from '../middleware/auth'
 import { calcMatchScore } from '../lib/matching'
 
 const router = Router()
 
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth as never, async (req: AuthRequest, res) => {
   const { skills, jlpt, location, type, search, trustMin } = req.query
 
   const where: Record<string, unknown> = {}
@@ -31,6 +31,27 @@ router.get('/', async (req, res) => {
     orderBy: { postedAt: 'desc' },
     include: { company: true },
   })
+
+  if (req.userId) {
+    const profile = await prisma.profile.findUnique({ where: { userId: req.userId } })
+    const jobsWithMatch = jobs.map(job => ({
+      ...job,
+      matchScore: calcMatchScore(
+        profile?.skills ?? [],
+        profile?.japaneseLevel ?? null,
+        profile?.location ?? null,
+        profile?.experienceYears ?? null,
+        {
+          requireSkills: job.requireSkills,
+          requireJlpt: job.requireJlpt,
+          requireExp: job.requireExp,
+          location: job.location,
+        }
+      ).total,
+    }))
+    res.json(jobsWithMatch)
+    return
+  }
 
   res.json(jobs)
 })
