@@ -1,25 +1,27 @@
-# JobMatch JP — Thuật toán Matching & Trust Score
-
-## 1. Matching Score (`calcMatchScore`)
+# JobMatch JP — Matching & Trust Score Algorithms
 
 **File:** `backend/src/lib/matching.ts`
 
-Tính điểm phù hợp giữa hồ sơ người dùng và một vị trí tuyển dụng. Kết quả là số nguyên từ **0 đến 100**.
+---
+
+## 1. Match Score (`calcMatchScore`)
+
+Calculates fit between a user profile and a job posting. Returns an integer **0–100**.
 
 ### Input
 
-| Tham số | Kiểu | Mô tả |
+| Parameter | Type | Description |
 |---|---|---|
-| `userSkills` | `string[]` | Danh sách kỹ năng của user |
-| `userJlpt` | `string \| null` | Trình độ JLPT của user (N1–N5) |
-| `userLocation` | `string \| null` | Thành phố user muốn làm việc |
-| `userExpYears` | `number \| null` | Số năm kinh nghiệm |
-| `job.requireSkills` | `string[]` | Kỹ năng job yêu cầu |
-| `job.requireJlpt` | `string \| null` | JLPT job yêu cầu |
-| `job.requireExp` | `string \| null` | Kinh nghiệm yêu cầu (vd: "2+") |
-| `job.location` | `string` | Thành phố của job |
+| `userSkills` | `string[]` | User's declared skills |
+| `userJlpt` | `string \| null` | User's JLPT level (N1–N5) |
+| `userLocation` | `string \| null` | User's preferred city |
+| `userExpYears` | `number \| null` | Years of experience |
+| `job.requireSkills` | `string[]` | Skills the job requires |
+| `job.requireJlpt` | `string \| null` | JLPT the job requires |
+| `job.requireExp` | `string \| null` | Required experience e.g. `"2+"` |
+| `job.location` | `string` | Job's city |
 
-### Công thức tổng quát
+### Formula
 
 ```
 total = round(
@@ -31,69 +33,52 @@ total = round(
 total = clamp(total, 0, 100)
 ```
 
-### Chi tiết từng thành phần
+### Component Details
 
-#### Kỹ năng (45% trọng số)
-
+#### Skills (45%)
 ```
-Nếu job không yêu cầu kỹ năng → 100
-Ngược lại:
-  matched = số kỹ năng job yêu cầu mà user có (so sánh case-insensitive)
+If job has no required skills → 100
+Otherwise:
+  matched = skills required by job that user has (case-insensitive)
   skills_score = round(matched / total_required × 100)
 ```
-
-**Ví dụ:**
-- Job yêu cầu: `[Java, Spring Boot, SQL]`
-- User có: `[Java, SQL, Python]`
-- Matched: 2 → Score = round(2/3 × 100) = **67**
+Example: job requires `[Java, Spring Boot, SQL]`, user has `[Java, SQL, Python]` → matched 2 → **67**
 
 ---
 
-#### Tiếng Nhật / JLPT (30% trọng số)
-
+#### Japanese / JLPT (30%)
 ```
-Thứ hạng JLPT: N1=1, N2=2, N3=3, N4=4, N5=5 (số nhỏ = level cao hơn)
+Rank: N1=1, N2=2, N3=3, N4=4, N5=5  (lower number = higher level)
 
-Nếu job không yêu cầu JLPT    → 100
-Nếu user có JLPT:
-  userRank <= reqRank (đủ hoặc giỏi hơn) → 100
-  userRank > reqRank  (chưa đủ)          → round(reqRank / userRank × 100)
-Nếu user không khai báo JLPT  → 50 (điểm mặc định)
+Job has no JLPT requirement          → 100
+User has JLPT declared:
+  userRank <= reqRank  (meets or exceeds)  → 100
+  userRank >  reqRank  (below requirement) → round(reqRank / userRank × 100)
+User has no JLPT declared            → 50  (neutral default)
 ```
-
-**Ví dụ:**
-- User N3 (rank=3), Job yêu cầu N2 (rank=2)
-- 3 > 2 → chưa đủ → Score = round(2/3 × 100) = **67**
-
-- User N2 (rank=2), Job yêu cầu N3 (rank=3)
-- 2 ≤ 3 → đủ điều kiện → Score = **100**
+Example: user N3 (rank 3), job requires N2 (rank 2) → 3 > 2 → `round(2/3×100)` = **67**
 
 ---
 
-#### Địa điểm (15% trọng số)
-
+#### Location (15%)
 ```
-User không khai báo location → 70  (điểm mặc định)
-User location == job location → 100 (khớp chính xác, case-insensitive)
-User location ≠ job location  → 60  (khác thành phố)
+User has no location declared → 70  (neutral default)
+User location == job location → 100 (exact match, case-insensitive)
+User location ≠  job location → 60  (different city)
 ```
 
 ---
 
-#### Kinh nghiệm (10% trọng số)
-
+#### Experience (10%)
 ```
-Job không yêu cầu kinh nghiệm → 70 (điểm mặc định)
-User và job đều có dữ liệu:
-  reqYears = parseInt(job.requireExp)  // "2+" → 2
+Job has no experience requirement → 70  (neutral default)
+User has no experience declared   → 70  (neutral default)
+Both present:
+  reqYears = parseInt(job.requireExp)   // "2+" → 2
   userExpYears >= reqYears → 100
-  userExpYears < reqYears  → round(userExpYears / reqYears × 100)
-User không khai báo kinh nghiệm → 70
+  userExpYears <  reqYears → round(userExpYears / reqYears × 100)
 ```
-
-**Ví dụ:**
-- User: 1 năm, Job yêu cầu: "2+"
-- Score = round(1/2 × 100) = **50**
+Example: user 1 year, job requires "2+" → `round(1/2×100)` = **50**
 
 ---
 
@@ -101,78 +86,94 @@ User không khai báo kinh nghiệm → 70
 
 ```typescript
 {
-  total: number,          // 0–100 (điểm tổng)
+  total: number,        // 0–100
   breakdown: {
-    skills: number,       // 0–100
-    jlpt: number,         // 0–100 (hoặc 50 nếu không có JLPT)
-    location: number,     // 60, 70, hoặc 100
-    experience: number    // 70 hoặc tính theo công thức
+    skills: number,     // 0–100
+    jlpt: number,       // 0–100 (or 50 if no JLPT)
+    location: number,   // 60, 70, or 100
+    experience: number  // 70 or calculated
   }
 }
 ```
 
 ---
 
-## 2. Trust Score (`calcTrustScore`)
+## 2. Match Explanation (`calcMatchExplanation`)
 
-**File:** `backend/src/lib/matching.ts`
+Generates a human-readable explanation of why a user matches (or doesn't match) a job. Called by `GET /jobs/:id/match-explanation`.
 
-Tính điểm tin cậy của một công ty. Chạy 1 lần khi seed database. Kết quả là số nguyên từ **0 đến 100**.
+### Input
+Same as `calcMatchScore` plus the pre-calculated `breakdown` scores.
 
-### Bảng điểm
+### Output
 
-| Tiêu chí | Điểm tối đa | Chi tiết |
+```typescript
+{
+  strengths:     Array<{ criterion: string; detail: string }>
+  weaknesses:    Array<{ criterion: string; detail: string }>
+  suggestions:   string[]
+  matchedSkills: string[]   // skills user has that job requires
+  missingSkills: string[]   // skills job requires that user lacks
+}
+```
+
+### Logic
+
+| Criterion | Strength condition | Weakness condition |
 |---|---|---|
-| **Tuổi công ty** | 20 | > 30 năm: 20 \| 10–30 năm: 15 \| 5–10 năm: 10 \| 1–5 năm: 5 |
-| **Quy mô** | 25 | Tập đoàn (>100k): 25 \| Lớn (>10k): 20 \| Lớn (>5k): 18 \| Trung bình: 15 \| Nhỏ: 5 |
-| **Số lượng review** | 20 | > 1000: 20 \| > 100: 15 \| > 10: 10 \| > 0: 5 |
-| **Glassdoor** | 20 | ≥ 4.0: 20 \| ≥ 3.5: 15 \| ≥ 3.0: 10 \| < 3.0: 5 |
-| **Website** | 5 | Có website: +5 |
-| **LinkedIn** | 5 | Có LinkedIn: +5 |
-| **Không có rủi ro** | 5 | Mảng `risks` rỗng: +5 |
-| **Tổng cộng** | **100** | `min(tổng, 100)` |
+| Skills | ≥ 1 matched skill | missing skills exist |
+| JLPT | score = 100 (meets requirement) | score < 100 and job has JLPT req |
+| Location | exact match | different city |
+| Experience | meets or exceeds requirement | below requirement |
 
-### Trust Score của 10 công ty seed
-
-| Công ty | Age | Size | Reviews | GD | Web | LinkedIn | NoRisk | **Total** |
-|---|---|---|---|---|---|---|---|---|
-| Toyota | 20 | 25 | 20 | 20 | 5 | 5 | 5 | **100** |
-| Sony | 20 | 20 | 20 | 20 | 5 | 5 | 5 | **95** |
-| Nintendo | 20 | 20 | 20 | 20 | 5 | 5 | 5 | **95** |
-| Panasonic | 20 | 25 | 20 | 15 | 5 | 5 | 5 | **95** |
-| LINE | 15 | 18 | 15 | 20 | 5 | 5 | 5 | **83** |
-| Rakuten | 15 | 20 | 15 | 15 | 5 | 5 | 5 | **80** |
-| Mercari | 15 | 15 | 15 | 20 | 5 | 5 | 5 | **80** |
-| DeNA | 15 | 15 | 15 | 20 | 5 | 0 | 5 | **75** |
-| SoftBank | 20 | 20 | 5 | 15 | 5 | 0 | 5 | **70** |
-| Startup XYZ | 5 | 5 | 0 | 0 | 0 | 0 | 0 | **10** |
+Suggestions are generated for each weakness:
+- Missing skills → "Consider adding X, Y, Z to your profile"
+- JLPT gap → "Study Japanese to reach JLPT NX"
+- Location mismatch → "The role is in X — update your preferred location"
+- Experience gap → "This role requires N+ years of experience"
 
 ---
 
-## 3. Màu sắc hiển thị
+## 3. Trust Score (`calcTrustScore`)
+
+Evaluates company trustworthiness. Runs **once at seed time**. Returns integer **0–100**.
+
+### Scoring Table
+
+| Criterion | Max | Scoring Detail |
+|---|---|---|
+| **Company age** | 20 | > 30 yrs: 20 \| 10–30 yrs: 15 \| 5–10 yrs: 10 \| 1–5 yrs: 5 |
+| **Headcount** | 25 | >100k: 25 \| >10k: 20 \| >5k: 18 \| >1k: 15 \| else: 5 |
+| **Review count** | 20 | >1000: 20 \| >100: 15 \| >10: 10 \| >0: 5 |
+| **Glassdoor** | 20 | ≥ 4.0: 20 \| ≥ 3.5: 15 \| ≥ 3.0: 10 \| < 3.0: 5 |
+| **Website** | 5 | Has website: +5 |
+| **LinkedIn** | 5 | Has LinkedIn: +5 |
+| **No risks** | 5 | `risks` array empty: +5 |
+| **Total** | **100** | `min(sum, 100)` |
+
+---
+
+## 4. Display Colours
 
 ### Match Score
-| Điểm | Màu | Ý nghĩa |
+| Score | Colour | Meaning |
 |---|---|---|
-| ≥ 80% | Xanh lá `#16a34a` | Phù hợp cao |
-| 60–79% | Vàng `#d97706` | Phù hợp trung bình |
-| < 60% | Đỏ `#dc2626` | Phù hợp thấp |
+| ≥ 80% | Green `#16a34a` | High fit |
+| 60–79% | Amber `#d97706` | Moderate fit |
+| < 60% | Red `#dc2626` | Low fit |
 
 ### Trust Score
-| Điểm | Màu badge | Icon | Nhãn |
+| Score | Badge colour | Icon | Label |
 |---|---|---|---|
-| ≥ 85 | Xanh lá | ShieldCheck | Verified |
-| 70–84 | Xanh dương | Shield | Reliable |
-| < 70 | Xám | ShieldAlert | (không nhãn) |
+| ≥ 85 | Green | ShieldCheck | Verified |
+| 70–84 | Blue | Shield | Reliable |
+| < 70 | Grey | ShieldAlert | — |
 
 ---
 
-## 4. Hạn chế hiện tại
+## 5. Known Limitations
 
-1. **Matching tính phía server** nhưng chỉ gọi khi user mở 1 job cụ thể — dashboard gọi `calcMatchScore()` cho toàn bộ job trong memory, chưa cache kết quả.
-
-2. **Trust Score tĩnh** — được tính 1 lần khi seed, không tự cập nhật khi dữ liệu công ty thay đổi.
-
-3. **JLPT score mặc định 50** khi user chưa khai báo — đây là giá trị tùy ý, có thể gây hiểu nhầm.
-
-4. **Location matching đơn giản** — chỉ so sánh chuỗi chính xác, không hỗ trợ "Remote" hoặc vùng địa lý gần nhau.
+1. **No score caching** — `calcMatchScore` runs on every Dashboard load for all jobs in memory.
+2. **Trust Score is static** — calculated once at seed, never auto-updated.
+3. **JLPT default 50** — arbitrary neutral value when user hasn't declared a level.
+4. **Exact location match only** — no "Remote" preference or proximity logic.

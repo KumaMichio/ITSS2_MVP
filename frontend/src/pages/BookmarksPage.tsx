@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Bookmark } from 'lucide-react'
 import api from '../lib/api'
+import { useT } from '../lib/useT'
 import type { Job, MatchResult } from '../types'
 import JobCard from '../components/JobCard'
 import JobDetailPanel from '../components/JobDetailPanel'
@@ -12,12 +13,12 @@ export default function BookmarksPage() {
   const [selected, setSelected] = useState<Job | null>(null)
   const [match, setMatch] = useState<MatchResult | null>(null)
   const { bookmarkedIds } = useStore()
+  const t = useT()
 
   useEffect(() => {
     fetchBookmarks()
   }, [])
 
-  // Sync khi user toggle bookmark từ trang này
   useEffect(() => {
     setJobs(prev => prev.filter(j => bookmarkedIds.has(j.id)))
   }, [bookmarkedIds])
@@ -48,7 +49,7 @@ export default function BookmarksPage() {
     <div className="max-w-2xl">
       <div className="flex items-center gap-2 mb-5">
         <Bookmark size={18} className="text-primary" fill="currentColor" />
-        <h1 className="text-lg font-semibold text-foreground">Việc làm đã lưu</h1>
+        <h1 className="text-lg font-semibold text-foreground">{t.bookmarks_title}</h1>
         {!loading && (
           <span className="text-sm text-muted-foreground">({jobs.length})</span>
         )}
@@ -62,8 +63,8 @@ export default function BookmarksPage() {
         ) : jobs.length === 0 ? (
           <div className="bg-white rounded-xl border border-border p-10 text-center">
             <Bookmark size={32} className="text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm font-medium text-foreground">Chưa có việc làm nào được lưu</p>
-            <p className="text-xs text-muted-foreground mt-1">Click icon bookmark trên mỗi job để lưu lại</p>
+            <p className="text-sm font-medium text-foreground">{t.bookmarks_empty_title}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t.bookmarks_empty_hint}</p>
           </div>
         ) : (
           jobs.map(job => (

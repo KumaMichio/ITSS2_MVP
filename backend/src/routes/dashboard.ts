@@ -38,7 +38,7 @@ router.get('/stats', async (req: AuthRequest, res) => {
 
   const topMatches = [...jobsWithMatch]
     .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 5)
+    .slice(0, 6)
 
   res.json({ avgMatchScore, verifiedCompanies, totalJobs, topMatches })
 })

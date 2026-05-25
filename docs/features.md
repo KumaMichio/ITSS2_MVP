@@ -1,181 +1,219 @@
-# JobMatch JP — Tính năng đã implement
+# JobMatch JP — Implemented Features
 
-## 1. Xác thực (Auth)
+## 1. Authentication
 
-### Đăng ký tài khoản
-- Form: email, mật khẩu (tối thiểu 6 ký tự), họ tên
-- Validate bằng Zod (backend) + HTML5 (frontend)
-- Hash mật khẩu bằng bcryptjs (10 rounds)
-- Tự động đăng nhập sau khi đăng ký thành công
-- Trả về JWT có hạn 7 ngày
+### Register
+- Fields: email, password (min 6 chars), full name
+- Zod validation (backend) + HTML5 required (frontend)
+- bcryptjs password hashing (10 rounds)
+- Auto-login after successful registration
+- Returns JWT valid for 7 days
 
-### Đăng nhập
-- Form: email + mật khẩu
-- Hiển thị thông tin demo (`demo@jobmatch.jp / demo123456`)
-- Lưu token vào `localStorage` + Zustand store
-- Redirect về Dashboard sau khi thành công
+### Login
+- Fields: email + password
+- Demo credentials shown: `demo@jobmatch.jp / demo123456`
+- Token saved to `localStorage` + Zustand store
+- Loads bookmarks and applications in parallel on login
+- Redirects to Dashboard on success
 
-### Bảo vệ route
-- `PrivateRoute` kiểm tra token trước khi render trang
-- Axios interceptor tự động thêm `Bearer token` vào mọi request
-- Khi nhận 401 → tự xóa auth và redirect về `/login`
+### Route Protection
+- `PrivateRoute` checks token before rendering
+- Axios interceptor auto-adds `Bearer token` to all requests
+- On 401 → clears auth state and redirects to `/login`
 
 ---
 
-## 2. Dashboard
+## 2. Internationalisation (EN / JA)
 
-### Greeting thông minh
-- Hiện thị "Chào buổi sáng/chiều/tối" theo giờ hiện tại
-- Dùng tên người dùng (lấy từ Zustand store)
+- Language toggle button in sidebar: **Switch to 日本語** / **Switch to English**
+- Language persists across sessions via `localStorage`
+- All UI strings translated: pages, components, error messages, date labels
+- `useT()` hook returns the active translation object from Zustand `lang` state
+- `timeAgo()` in `utils.ts` accepts a `lang` param and returns localised relative dates (e.g. "3 weeks ago" / "3週間前")
 
-### Stats cards (3 thẻ số liệu)
-| Card | Mô tả |
+---
+
+## 3. Dashboard
+
+### Smart Greeting
+- "Good morning / afternoon / evening" (or おはようございます / こんにちは / こんばんは) based on hour
+- Displays user's first name from Zustand store
+
+### Stats Cards
+| Card | Description |
 |---|---|
-| Avg. Match Score | % phù hợp trung bình của user với toàn bộ job |
-| Verified Companies | Số công ty có Trust Score ≥ 70 |
-| Tổng việc làm | Tổng số job đang tuyển dụng trong hệ thống |
+| Avg. Match Score | User's average match % across all jobs |
+| Verified Companies | Companies with Trust Score ≥ 70 |
+| Total Jobs | Total active job listings |
 
-### Top matches
-- Hiển thị **5 job phù hợp nhất** theo Match Score giảm dần
-- Layout lưới 2 cột
-- Nút "Cập nhật" để reload stats
-- Nút "Xem tất cả" link sang trang Jobs
+### Top Matches
+- Shows **top 6 jobs** sorted by Match Score descending
+- 2-column grid (3-column on xl screens)
+- Refresh button to reload stats
+- "View all →" link to Jobs page
 
 ---
 
-## 3. Danh sách & tìm kiếm việc làm
+## 4. Job Listings
 
-### Tìm kiếm full-text
-- Tìm theo tên vị trí hoặc tên công ty
-- Case-insensitive
-- Gọi API mỗi khi input thay đổi
+### Full-text Search
+- Search by job title, skill, or company name
+- Case-insensitive, server-side
+- Fires on input change, resets to page 1
 
-### Bộ lọc (Filter panel bên trái)
-| Loại filter | Giá trị | Kiểu chọn |
+### Filter Panel (left sidebar)
+| Filter | Values | Type |
 |---|---|---|
 | Employment | Full-time, Part-time, Contract, Remote | Checkbox (multi) |
 | JLPT Level | N1, N2, N3, N4, N5 | Checkbox (multi) |
-| Trust Score | 85+ Verified, 70+ Reliable, Tất cả | Radio (single) |
+| Trust Score | 85+ Verified, 70+ Reliable, All | Radio (single) |
 
-- Nút "Xóa filter" xuất hiện khi có filter đang active
+- "Clear filters" button when any filter is active
 
-### Sắp xếp
-- **Phù hợp nhất:** Sort theo `matchScore` giảm dần (client-side)
-- **Mới nhất:** Sort theo `postedAt` giảm dần (client-side)
+### Pagination
+- 10 jobs per page (server-side with `skip` / `take`)
+- Previous / Next buttons + up to 5 page number buttons (smart windowing)
+- Filter and search changes reset to page 1
+- Response: `{ data, total, page, perPage, totalPages }`
 
-### Job card (list view)
-Mỗi card hiển thị:
-- Logo công ty (badge màu sắc + chữ cái)
-- Tên vị trí + tên công ty + thời gian đăng
-- Địa điểm + loại hình công việc + mức lương (`¥XXXk – ¥YYYk`)
-- Tags kỹ năng yêu cầu (tối đa 3) + JLPT level
-- Trust Score badge (màu xanh/xanh dương/xám theo điểm)
-- Cảnh báo rủi ro `⚠ Có rủi ro` nếu có
-- Vòng tròn Match % (màu xanh/vàng/đỏ)
+### Sorting
+- **Best match:** sort by `matchScore` descending (client-side, scores returned by server via `optionalAuth`)
+- **Newest:** sort by `postedAt` descending (client-side)
 
-### Trạng thái
-- Loading skeleton khi đang tải
-- Empty state khi không có kết quả
-
----
-
-## 4. Chi tiết việc làm (JobDetailPanel)
-
-Mở bằng cách click vào job card, hiển thị dạng slide-in panel bên phải.
-
-### Thông tin cơ bản
-- Header: logo công ty, tên job, trust badge, nút đóng (X)
-- Địa điểm, loại hình, mức lương
-
-### Breakdown matching
-- Vòng tròn match % tổng
-- 4 thanh progress bar:
-  - **Kỹ năng** — % kỹ năng yêu cầu user có
-  - **Tiếng Nhật (JLPT)** — mức JLPT của user so với yêu cầu
-  - **Địa điểm** — user ở đúng thành phố không
-  - **Kinh nghiệm** — số năm kinh nghiệm so với yêu cầu
-- Mỗi bar có màu: xanh ≥ 80%, vàng ≥ 60%, đỏ < 60%
-
-### Yêu cầu công việc
-- Danh sách kỹ năng dưới dạng tags
-- JLPT level, kinh nghiệm tối thiểu, học vấn
-
-### Mô tả công việc
-- Full text description
-
-### Phúc lợi
-- Danh sách với icon checkmark xanh
-
-### Cảnh báo rủi ro
-- Hiển thị trên nền đỏ nếu có rủi ro
-- Icon `AlertTriangle` + danh sách rủi ro
-
-### Thông tin công ty
-- Quy mô, năm thành lập, Glassdoor rating, số lượng review
-- Mô tả công ty
-- Link website (mở tab mới)
+### Job Card
+Each card shows:
+- Company logo badge (coloured letter)
+- Job title + company name + relative post date (localised)
+- Location + employment type + salary (`¥XXXk – ¥YYYk`)
+- Up to 3 required skill tags + JLPT level badge
+- Trust Score badge (green / blue / grey)
+- `⚠ Has risks` / `⚠ リスクあり` warning if present
+- Match % ring (green ≥ 80%, amber ≥ 60%, red < 60%)
+- Bookmark toggle button (optimistic UI)
 
 ---
 
-## 5. Hồ sơ cá nhân (CV Profile)
+## 5. Job Detail Panel
 
-### Thông tin cơ bản
-- Họ tên (cập nhật trực tiếp bảng User)
-- Vị trí hiện tại
-- Số năm kinh nghiệm
-- Địa điểm mong muốn (dropdown: 7 thành phố Nhật)
+Slide-in panel from the right, triggered by clicking any job card.
 
-### Trình độ tiếng Nhật
-- 5 nút toggle: N1 → N5
-- Chỉ chọn 1 level, click lại để bỏ chọn
+### Apply Button
+- "Apply now" → shows confirmation modal before submitting
+- "Applied — Click to cancel" state with one-click unapply
+- Optimistic UI: state updates immediately, rolls back on API error
+- Persisted in `appliedIds` Zustand set, loaded on login
 
-### Kỹ năng
-- Hiển thị kỹ năng hiện có dạng pill + nút xóa (X)
-- Input thêm kỹ năng mới (Enter hoặc nút +)
-- Gợi ý 12 kỹ năng phổ biến (dạng nút dashed, click để thêm nhanh)
-- Gợi ý tự lọc ra những kỹ năng user chưa có
+### Match Breakdown
+- Total match % ring
+- 4 progress bars: Skills (45%), Japanese/JLPT (30%), Location (15%), Experience (10%)
+- Each bar coloured: green ≥ 80%, amber ≥ 60%, red < 60%
 
-### Lưu hồ sơ
-- Nút "Lưu hồ sơ" với loading state
-- Hiện `✓ Đã lưu!` trong 2.5 giây sau khi thành công
-- Dùng `upsert` → không cần phân biệt create/update
+### Why You're a Match
+- **Strengths** (green checkmarks): what the user has that matches
+- **Areas to improve** (red ✕): what is missing
+- **Improvement suggestions** (amber box): concrete next steps
+- Required skill tags: matched skills highlighted green with ✓ prefix
 
----
-
-## 6. Bookmark
-
-### Backend API (đã implement)
-- `GET /api/bookmarks` — lấy danh sách job đã bookmark
-- `POST /api/bookmarks/:jobId` — thêm bookmark
-- `DELETE /api/bookmarks/:jobId` — xóa bookmark
-- Unique constraint `[userId, jobId]` — không bị trùng
-
-> **Lưu ý:** Bookmark đã có backend nhưng **chưa có UI** trên frontend.
+### Other Sections
+- Job description, required skills / JLPT / experience / education
+- Benefits list (with checkmarks)
+- Risk warnings (red background) if any
+- Company info: size, founded, Glassdoor rating, review count, description, website link
+- Bookmark toggle in header
 
 ---
 
-## 7. Matching Algorithm
+## 6. CV Profile
 
-Xem chi tiết tại [algorithms.md](algorithms.md).
+### Basic Info
+- Full name (required, inline validation)
+- Current role (free text)
+- Years of experience (integer ≥ 0, inline validation)
+- Preferred location (dropdown: 7 Japanese cities)
+
+### Japanese Level
+- 5 toggle buttons: N1 → N5
+- Single-select; click again to deselect
+
+### Skills
+- Existing skills as removable pills (× button)
+- Add new skill: free text input + Enter or + button
+- 12 quick-add suggestion chips (filtered to unused skills)
+
+### Inline Validation
+- Name: required — red border + error text on attempt to save empty
+- Experience: must be integer ≥ 0
+
+### Save
+- Loading state while saving
+- "✓ Saved!" / "✓ 保存しました！" confirmation shown for 2.5 seconds
+- Backend errors shown inline
 
 ---
 
-## 8. Trust Score
+## 7. Bookmarks
 
-Xem chi tiết tại [algorithms.md](algorithms.md).
+- Bookmark icon on every `JobCard` and `JobDetailPanel` header
+- Optimistic toggle: icon updates instantly, rolls back on API error
+- `BookmarksPage` lists all saved jobs
+- Empty state with instructions
+- List syncs live: removing a bookmark from the detail panel removes it from the saved list immediately
 
 ---
 
-## 9. Infrastructure
+## 8. Match Insights (`/insights`)
 
-### Docker Compose (all-in-one)
-- 3 services: `db`, `api`, `web`
-- Health check TCP cho PostgreSQL trước khi khởi động API
-- Retry loop (`nc -z db 5432`) trong API container
-- Persistent volume cho database data
-- Nginx làm reverse proxy cho frontend
+Client-side analysis of user profile vs. all jobs in the system.
 
-### CI/CD-ready
-- Multi-stage Dockerfile cho frontend (Node builder → Nginx)
-- Build args cho `VITE_API_URL` (có thể override khi deploy)
-- `.dockerignore` loại trừ `.env` và `node_modules`
+- **Average match score** ring with colour coding and advice text (add skills / profile is competitive)
+- **Japanese level status**: user's JLPT vs. highest market requirement, qualified / needs improvement badge
+- **Skills to learn**: ranked by job market frequency, with progress bar showing demand %
+- **Current skills**: user's matched skills with their market frequency count
+
+---
+
+## 9. Trust Scores (`/trust`)
+
+- Ranked list of all companies by trust score
+- Each row: rank, logo, name, size, founded, Glassdoor, score badge, fill bar
+- Click any company to see per-criterion score breakdown (age, size, Glassdoor, reviews)
+- Right panel shows rating criteria with point allocation when no company is selected
+
+---
+
+## 10. Matching Algorithm
+
+See [algorithms.md](algorithms.md) for full details.
+
+**Summary:** `total = skills×0.45 + jlpt×0.30 + location×0.15 + experience×0.10`
+
+`calcMatchExplanation()` returns:
+- `strengths`: array of `{ criterion, detail }` for satisfied criteria
+- `weaknesses`: array for unmet criteria
+- `suggestions`: string array of actionable advice
+- `matchedSkills` / `missingSkills`: skill arrays for UI highlighting
+
+---
+
+## 11. Trust Score
+
+See [algorithms.md](algorithms.md) for full details.
+
+Calculated once at seed time from: company age, headcount, Glassdoor rating, review count, website, LinkedIn presence, risk-free status. Max 100 points.
+
+---
+
+## 12. Infrastructure
+
+### Docker Compose
+- 3 services: `db` (Postgres 16), `api` (Express), `web` (Nginx)
+- TCP healthcheck on DB before API starts
+- Persistent volume for database data
+- Nginx as reverse proxy for frontend
+- Port mapping: web→5173:80, api→3003:3001, db→5433:5432
+
+### Local Dev
+- Frontend: `npm run dev` → `localhost:5173`
+- Backend: `npm run dev` → `localhost:3001`
+- DB: `docker-compose up db -d` → `localhost:5433`
+- `.env` `DATABASE_URL` must use port **5433**

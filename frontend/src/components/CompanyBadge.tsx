@@ -4,7 +4,7 @@ interface Props {
   size?: number
 }
 
-export default function CompanyBadge({ logo, logoColor, size = 44 }: Props) {
+export default function CompanyBadge({ logo, logoColor, size = 48 }: Props) {
   return (
     <div
       className="rounded-xl flex items-center justify-center font-bold text-white shrink-0"

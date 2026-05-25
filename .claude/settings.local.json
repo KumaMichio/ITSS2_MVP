@@ -5,7 +5,8 @@
       "Bash(npm install *)",
       "Bash(npx prisma *)",
       "Bash(npm create *)",
-      "Bash(npx tailwindcss *)"
+      "Bash(npx tailwindcss *)",
+      "Bash(npm run *)"
     ],
     "additionalDirectories": [
       "e:\\Pet_project\\ITSS2_mvp\\backend\\src"

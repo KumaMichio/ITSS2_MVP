@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Brain, TrendingUp, Zap, CheckCircle, XCircle } from 'lucide-react'
 import api from '../lib/api'
+import { useT } from '../lib/useT'
 import type { Job, User } from '../types'
 import { matchColor } from '../lib/utils'
 
@@ -14,10 +15,17 @@ export default function InsightsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
+  const t = useT()
 
   useEffect(() => {
-    Promise.all([api.get('/users/me'), api.get('/jobs')])
-      .then(([u, j]) => { setUser(u.data); setJobs(j.data) })
+    Promise.all([
+      api.get('/users/me'),
+      api.get('/jobs', { params: { perPage: 100 } }),
+    ])
+      .then(([u, j]) => {
+        setUser(u.data)
+        setJobs(j.data.data ?? [])
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -35,7 +43,6 @@ export default function InsightsPage() {
   const userExp = user?.profile?.experienceYears ?? 0
   const userLocation = user?.profile?.location
 
-  // Đếm tần suất từng skill trong thị trường
   const skillFreq: Record<string, number> = {}
   jobs.forEach(job => {
     job.requireSkills.forEach(s => {
@@ -43,7 +50,6 @@ export default function InsightsPage() {
     })
   })
 
-  // Phân loại: có / chưa có
   const allSkills: SkillGap[] = Object.entries(skillFreq)
     .map(([skill, jobCount]) => ({
       skill,
@@ -55,13 +61,11 @@ export default function InsightsPage() {
   const missingSkills = allSkills.filter(s => !s.hasSkill)
   const ownedSkills = allSkills.filter(s => s.hasSkill)
 
-  // Match score trung bình
   const jobsWithScore = jobs.filter(j => j.matchScore !== undefined)
   const avgScore = jobsWithScore.length
     ? Math.round(jobsWithScore.reduce((s, j) => s + (j.matchScore ?? 0), 0) / jobsWithScore.length)
     : 0
 
-  // JLPT rank
   const jlptRank: Record<string, number> = { N1: 1, N2: 2, N3: 3, N4: 4, N5: 5 }
   const jlptNeeded = jobs
     .filter(j => j.requireJlpt)
@@ -98,18 +102,18 @@ export default function InsightsPage() {
           </span>
         </div>
         <div>
-          <p className="font-semibold text-foreground">Điểm phù hợp trung bình</p>
+          <p className="font-semibold text-foreground">{t.insights_avg_score}</p>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Dựa trên {jobsWithScore.length} việc làm trong hệ thống
+            {t.insights_based_prefix}{t.insights_based_prefix ? ' ' : ''}{jobsWithScore.length} {t.insights_based_suffix}
           </p>
           {avgScore < 60 && (
             <p className="text-xs text-amber-600 mt-1.5 bg-amber-50 px-2 py-1 rounded-md">
-              Hãy bổ sung thêm kỹ năng để tăng điểm phù hợp
+              {t.insights_low_score}
             </p>
           )}
           {avgScore >= 80 && (
             <p className="text-xs text-green-600 mt-1.5 bg-green-50 px-2 py-1 rounded-md">
-              Hồ sơ của bạn rất cạnh tranh trên thị trường!
+              {t.insights_high_score}
             </p>
           )}
         </div>
@@ -119,39 +123,39 @@ export default function InsightsPage() {
       <div className="bg-white rounded-xl border border-border p-5">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp size={15} className="text-primary" />
-          <h2 className="font-semibold text-sm">Trình độ tiếng Nhật</h2>
+          <h2 className="font-semibold text-sm">{t.insights_jlpt_title}</h2>
         </div>
         <div className="flex items-center gap-3">
           <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${userJlpt ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-500'}`}>
-            {userJlpt ?? 'Chưa khai báo'}
+            {userJlpt ?? t.insights_not_set}
           </div>
           <span className="text-muted-foreground text-sm">→</span>
           <div className="text-sm text-muted-foreground">
             {highestNeeded
-              ? `Thị trường yêu cầu cao nhất: N${highestNeeded}`
-              : 'Không có yêu cầu JLPT'}
+              ? `${t.insights_market_needs} N${highestNeeded}`
+              : t.insights_no_jlpt}
           </div>
           {userJlpt && (
             jlptOk
-              ? <span className="flex items-center gap-1 text-xs text-green-600"><CheckCircle size={13} /> Đủ điều kiện</span>
-              : <span className="flex items-center gap-1 text-xs text-red-500"><XCircle size={13} /> Cần nâng cấp</span>
+              ? <span className="flex items-center gap-1 text-xs text-green-600"><CheckCircle size={13} /> {t.insights_qualified}</span>
+              : <span className="flex items-center gap-1 text-xs text-red-500"><XCircle size={13} /> {t.insights_needs_upgrade}</span>
           )}
         </div>
         {userExp !== null && (
           <p className="text-xs text-muted-foreground mt-2">
-            Kinh nghiệm của bạn: <span className="font-medium text-foreground">{userExp} năm</span>
-            {userLocation && <> · Địa điểm: <span className="font-medium text-foreground">{userLocation}</span></>}
+            {t.insights_exp_prefix} <span className="font-medium text-foreground">{userExp} {t.insights_exp_suffix}</span>
+            {userLocation && <> · {t.insights_location_prefix} <span className="font-medium text-foreground">{userLocation}</span></>}
           </p>
         )}
       </div>
 
-      {/* Kỹ năng còn thiếu */}
+      {/* Missing skills */}
       {missingSkills.length > 0 && (
         <div className="bg-white rounded-xl border border-border p-5">
           <div className="flex items-center gap-2 mb-3">
             <Zap size={15} className="text-amber-500" />
-            <h2 className="font-semibold text-sm">Kỹ năng nên học thêm</h2>
-            <span className="text-xs text-muted-foreground">— xuất hiện nhiều trong thị trường</span>
+            <h2 className="font-semibold text-sm">{t.insights_missing_skills}</h2>
+            <span className="text-xs text-muted-foreground">{t.insights_missing_hint}</span>
           </div>
           <div className="space-y-2">
             {missingSkills.map(({ skill, jobCount }) => (
@@ -172,11 +176,11 @@ export default function InsightsPage() {
         </div>
       )}
 
-      {/* Kỹ năng đang có */}
+      {/* Owned skills */}
       <div className="bg-white rounded-xl border border-border p-5">
         <div className="flex items-center gap-2 mb-3">
           <CheckCircle size={15} className="text-green-500" />
-          <h2 className="font-semibold text-sm">Kỹ năng bạn đang có</h2>
+          <h2 className="font-semibold text-sm">{t.insights_owned_skills}</h2>
         </div>
         {ownedSkills.length > 0 ? (
           <div className="flex flex-wrap gap-2">
@@ -196,9 +200,7 @@ export default function InsightsPage() {
               ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Chưa có kỹ năng nào — hãy cập nhật hồ sơ tại trang Cài đặt.
-          </p>
+          <p className="text-sm text-muted-foreground">{t.insights_no_skills}</p>
         )}
       </div>
     </div>

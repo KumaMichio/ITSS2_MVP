@@ -5,7 +5,7 @@ interface Props {
   size?: number
 }
 
-export default function MatchCircle({ value, size = 56 }: Props) {
+export default function MatchCircle({ value, size = 60 }: Props) {
   const r = (size - 6) / 2
   const circumference = 2 * Math.PI * r
   const offset = circumference - (value / 100) * circumference

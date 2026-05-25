@@ -1,15 +1,16 @@
-# JobMatch JP — API Endpoints
+# JobMatch JP — API Reference
 
 Base URL: `http://localhost:3001/api`
 
-## Xác thực
+## Authentication
 
-Các endpoint được đánh dấu **🔒 Protected** yêu cầu header:
+Endpoints marked **🔒 Protected** require:
 ```
 Authorization: Bearer <JWT token>
 ```
+Tokens are valid for 7 days. Expired/invalid tokens return `401`.
 
-Token có hiệu lực 7 ngày. Khi token hết hạn hoặc không hợp lệ, server trả về `401`.
+Endpoints marked **🔓 Optional auth** work without a token but return richer data (e.g. `matchScore`) when authenticated.
 
 ---
 
@@ -17,303 +18,256 @@ Token có hiệu lực 7 ngày. Khi token hết hạn hoặc không hợp lệ, 
 
 ### POST /auth/register
 
-Đăng ký tài khoản mới.
+Create a new account.
 
-**Request body:**
+**Request:**
 ```json
-{
-  "email": "user@example.com",
-  "password": "abc123",
-  "name": "Nguyen Van A"
-}
+{ "email": "user@example.com", "password": "abc123", "name": "John Doe" }
 ```
-
-| Field | Kiểu | Ràng buộc |
-|---|---|---|
-| email | string | Định dạng email hợp lệ |
-| password | string | Tối thiểu 6 ký tự |
-| name | string | Không được rỗng |
 
 **Response 201:**
 ```json
-{
-  "token": "<JWT>",
-  "user": { "id": "...", "email": "...", "name": "..." }
-}
+{ "token": "<JWT>", "user": { "id": "...", "email": "...", "name": "..." } }
 ```
 
-**Errors:**
-- `400` — Dữ liệu không hợp lệ (Zod error)
-- `409` — Email đã được đăng ký
+**Errors:** `400` invalid data · `409` email already registered
 
 ---
 
 ### POST /auth/login
 
-Đăng nhập.
-
-**Request body:**
+**Request:**
 ```json
-{
-  "email": "demo@jobmatch.jp",
-  "password": "demo123456"
-}
+{ "email": "demo@jobmatch.jp", "password": "demo123456" }
 ```
 
 **Response 200:**
 ```json
-{
-  "token": "<JWT>",
-  "user": { "id": "...", "email": "...", "name": "..." }
-}
+{ "token": "<JWT>", "user": { "id": "...", "email": "...", "name": "..." } }
 ```
 
-**Errors:**
-- `400` — Dữ liệu không hợp lệ
-- `401` — Sai email hoặc mật khẩu
+**Errors:** `400` missing fields · `401` wrong credentials
 
 ---
 
 ## Jobs
 
-### GET /jobs
+### GET /jobs 🔓 Optional auth
 
-Lấy danh sách tất cả việc làm. Hỗ trợ tìm kiếm và lọc qua query string.
+Returns a paginated list of jobs. When authenticated, each job includes `matchScore`.
 
 **Query params:**
 
-| Param | Kiểu | Mô tả |
-|---|---|---|
-| `search` | string | Tìm theo tên vị trí hoặc tên công ty (case-insensitive) |
-| `location` | string | Lọc theo thành phố (case-insensitive exact match) |
-| `type` | string | Lọc theo loại hình: `Full-time`, `Part-time`, `Contract`, `Remote` |
-| `jlpt` | string | Lọc theo JLPT yêu cầu: `N1`–`N5` |
-| `skills` | string | Danh sách kỹ năng phân cách bằng dấu phẩy. Job phải có ít nhất 1 kỹ năng khớp |
-| `trustMin` | number | Chỉ trả về job thuộc công ty có Trust Score ≥ giá trị này |
+| Param | Type | Default | Description |
+|---|---|---|---|
+| `page` | number | 1 | Page number |
+| `perPage` | number | 10 | Items per page (max 100) |
+| `search` | string | — | Filter by title or company name |
+| `type` | string | — | Employment type (Full-time, Part-time, Contract, Remote) |
+| `jlpt` | string | — | Required JLPT level (N1–N5) |
+| `trustMin` | number | — | Minimum company trust score |
 
-**Response 200:** Mảng Job object, sắp xếp theo `postedAt` mới nhất. Mỗi job bao gồm object `company`.
-
+**Response 200:**
 ```json
-[
-  {
-    "id": "...",
-    "title": "Backend Engineer",
-    "location": "Tokyo",
-    "type": "Full-time",
-    "salaryMin": 600,
-    "salaryMax": 900,
-    "currency": "JPY_MAN",
-    "postedAt": "2024-01-15T00:00:00.000Z",
-    "description": "...",
-    "requireSkills": ["Java", "Spring Boot"],
-    "requireJlpt": "N3",
-    "requireExp": "2+",
-    "requireEdu": "Bachelor",
-    "benefits": ["Remote OK", "Visa support"],
-    "risks": [],
-    "companyId": "...",
-    "company": {
-      "id": "...",
-      "name": "Toyota Motor",
-      "trustScore": 100,
-      ...
-    }
-  }
-]
+{
+  "data": [ /* Job[] */ ],
+  "total": 32,
+  "page": 1,
+  "perPage": 10,
+  "totalPages": 4
+}
 ```
 
-> **Lưu ý:** `matchScore` KHÔNG được tính trong endpoint này. Matching phải gọi riêng qua `GET /jobs/:id/match`.
+**Job object:**
+```json
+{
+  "id": "...",
+  "title": "Backend Developer",
+  "location": "Tokyo",
+  "type": "Full-time",
+  "salaryMin": 500000,
+  "salaryMax": 800000,
+  "requireSkills": ["Java", "Spring Boot"],
+  "requireJlpt": "N2",
+  "requireExp": "3+",
+  "requireEdu": "Bachelor's or higher",
+  "description": "...",
+  "benefits": ["...", "..."],
+  "risks": [],
+  "postedAt": "2025-05-01T00:00:00.000Z",
+  "matchScore": 78,
+  "company": {
+    "id": "...", "name": "...", "logo": "FJ", "logoColor": "#e11d48",
+    "trustScore": 90, "size": ">10k", "founded": 1935,
+    "glassdoor": 4.1, "reviewCount": 2100,
+    "description": "...", "website": "https://...", "linkedin": "https://..."
+  }
+}
+```
 
 ---
 
-### GET /jobs/:id
+### GET /jobs/:id/match 🔒 Protected
 
-Lấy chi tiết một việc làm theo ID.
-
-**Response 200:** Job object đầy đủ (bao gồm `company`).
-
-**Errors:**
-- `404` — Không tìm thấy job
-
----
-
-### GET /jobs/:id/match 🔒
-
-Tính điểm phù hợp (matching score) giữa hồ sơ user đang đăng nhập và một job.
+Returns match score breakdown for one job vs. the authenticated user's profile.
 
 **Response 200:**
 ```json
 {
   "total": 78,
   "breakdown": {
-    "skills": 67,
+    "skills": 85,
     "jlpt": 100,
     "location": 100,
-    "experience": 100
+    "experience": 70
   }
 }
 ```
 
-Xem chi tiết công thức tại [algorithms.md](algorithms.md).
+---
 
-**Errors:**
-- `401` — Chưa đăng nhập
-- `404` — Không tìm thấy job
+### GET /jobs/:id/match-explanation 🔒 Protected
+
+Returns a human-readable explanation of why the user matches (or doesn't) this job.
+
+**Response 200:**
+```json
+{
+  "strengths": [
+    { "criterion": "skills", "detail": "You have 4 of 5 required skills" },
+    { "criterion": "location", "detail": "You are in Tokyo, matching the job location" }
+  ],
+  "weaknesses": [
+    { "criterion": "jlpt", "detail": "This job requires N2; you have N3" }
+  ],
+  "suggestions": [
+    "Study Japanese to reach JLPT N2"
+  ],
+  "matchedSkills": ["Java", "SQL", "Docker"],
+  "missingSkills": ["Kubernetes"]
+}
+```
 
 ---
 
 ## Users
 
-### GET /users/me 🔒
+### GET /users/me 🔒 Protected
 
-Lấy thông tin tài khoản và hồ sơ của user đang đăng nhập.
+Returns the authenticated user with their profile.
 
 **Response 200:**
 ```json
 {
-  "id": "...",
-  "email": "demo@jobmatch.jp",
-  "name": "Demo User",
-  "createdAt": "...",
+  "id": "...", "email": "...", "name": "...",
   "profile": {
-    "id": "...",
-    "userId": "...",
+    "currentTitle": "Backend Developer",
     "skills": ["Java", "SQL"],
     "japaneseLevel": "N3",
     "location": "Tokyo",
-    "experienceYears": 3,
-    "currentTitle": "Backend Engineer"
+    "experienceYears": 3
   }
 }
 ```
 
-> **Lưu ý:** Trường `password` bị loại bỏ khỏi response.
-
-**Errors:**
-- `401` — Chưa đăng nhập
-- `404` — User không tồn tại trong DB
-
 ---
 
-### PUT /users/me/profile 🔒
+### PUT /users/me/profile 🔒 Protected
 
-Cập nhật hồ sơ (và tên) của user đang đăng nhập. Dùng `upsert` nên không cần phân biệt tạo mới hay cập nhật.
+Create or update the user's CV profile (upsert).
 
-**Request body** (tất cả field đều optional):
+**Request:**
 ```json
 {
-  "name": "Nguyen Van A",
+  "name": "John Doe",
+  "currentTitle": "Backend Developer",
   "skills": ["Java", "Spring Boot", "SQL"],
-  "japaneseLevel": "N3",
+  "japaneseLevel": "N2",
   "location": "Tokyo",
-  "experienceYears": 3,
-  "currentTitle": "Backend Engineer"
+  "experienceYears": 3
 }
 ```
 
-| Field | Kiểu | Ràng buộc |
-|---|---|---|
-| name | string | Không rỗng (nếu có) |
-| skills | string[] | Mảng chuỗi |
-| japaneseLevel | `N1`\|`N2`\|`N3`\|`N4`\|`N5`\|`null` | Enum hoặc null |
-| location | string\|null | Tên thành phố |
-| experienceYears | number\|null | Số nguyên ≥ 0 |
-| currentTitle | string\|null | Tiêu đề vị trí hiện tại |
+All fields are optional (set to `null` to clear). `name` updates the `User.name` field.
 
-**Response 200:** Profile object sau khi cập nhật.
-
-**Errors:**
-- `400` — Dữ liệu không hợp lệ (Zod error)
-- `401` — Chưa đăng nhập
+**Response 200:** `{ "ok": true }`
 
 ---
 
 ## Bookmarks
 
-### GET /bookmarks 🔒
+### GET /bookmarks 🔒 Protected
 
-Lấy danh sách việc làm đã bookmark, sắp xếp theo thời gian bookmark mới nhất.
+Returns all bookmarked jobs (full job objects, no pagination).
 
-**Response 200:** Mảng Job object (bao gồm `company`), giống format `GET /jobs`.
-
----
-
-### POST /bookmarks/:jobId 🔒
-
-Thêm bookmark cho một job.
-
-**Response 201:**
-```json
-{
-  "id": "...",
-  "userId": "...",
-  "jobId": "...",
-  "createdAt": "..."
-}
-```
-
-**Errors:**
-- `401` — Chưa đăng nhập
-- `409` — Job đã được bookmark
+**Response 200:** `Job[]`
 
 ---
 
-### DELETE /bookmarks/:jobId 🔒
+### POST /bookmarks/:jobId 🔒 Protected
 
-Xóa bookmark. Dùng `deleteMany` nên không báo lỗi nếu bookmark không tồn tại.
+Add a job to bookmarks. Idempotent — no error if already bookmarked.
 
-**Response 204:** Không có body.
+**Response 201:** `{ "ok": true }`
 
-**Errors:**
-- `401` — Chưa đăng nhập
+---
+
+### DELETE /bookmarks/:jobId 🔒 Protected
+
+Remove a bookmark.
+
+**Response 204:** (no body)
+
+---
+
+## Applications
+
+### GET /applications 🔒 Protected
+
+Returns all jobs the user has applied to.
+
+**Response 200:** `Job[]`
+
+---
+
+### POST /applications/:jobId 🔒 Protected
+
+Apply to a job.
+
+**Response 201:** `{ "ok": true }`
+
+**Errors:** `409` already applied
+
+---
+
+### DELETE /applications/:jobId 🔒 Protected
+
+Withdraw an application.
+
+**Response 204:** (no body)
 
 ---
 
 ## Dashboard
 
-### GET /dashboard/stats 🔒
+### GET /dashboard/stats 🔒 Protected
 
-Lấy thống kê tổng quan để hiển thị trên Dashboard.
+Returns summary stats and top 6 matched jobs for the authenticated user.
 
 **Response 200:**
 ```json
 {
-  "avgMatchScore": 72,
-  "verifiedCompanies": 8,
-  "totalJobs": 10,
-  "topMatches": [
-    {
-      "id": "...",
-      "title": "Backend Engineer",
-      "matchScore": 95,
-      "company": { ... },
-      ...
-    }
-  ]
+  "avgMatchScore": 54,
+  "verifiedCompanies": 18,
+  "totalJobs": 32,
+  "topMatches": [ /* top 6 Job objects with matchScore */ ]
 }
 ```
 
-| Field | Mô tả |
-|---|---|
-| `avgMatchScore` | % phù hợp trung bình của user với toàn bộ job trong DB |
-| `verifiedCompanies` | Số công ty có Trust Score ≥ 70 |
-| `totalJobs` | Tổng số job đang tuyển dụng |
-| `topMatches` | 5 job phù hợp nhất (sắp xếp theo matchScore giảm dần) |
-
-> **Lưu ý:** Endpoint này tải toàn bộ job vào memory và tính matching cho từng job — có thể chậm khi số lượng job lớn.
-
-**Errors:**
-- `401` — Chưa đăng nhập
-
 ---
 
-## Health Check
+## Health
 
 ### GET /health
 
-Kiểm tra API đang hoạt động. Không yêu cầu auth.
-
-**Response 200:**
-```json
-{ "status": "ok" }
-```
+**Response 200:** `{ "ok": true }`

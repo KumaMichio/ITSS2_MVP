@@ -50,6 +50,14 @@ export interface Job {
   matchScore?: number
 }
 
+export interface PaginatedJobs {
+  data: Job[]
+  total: number
+  page: number
+  perPage: number
+  totalPages: number
+}
+
 export interface MatchResult {
   total: number
   breakdown: {
@@ -58,6 +66,19 @@ export interface MatchResult {
     location: number
     experience: number
   }
+}
+
+export interface ExplanationItem {
+  criterion: string
+  detail: string
+}
+
+export interface MatchExplanation {
+  strengths: ExplanationItem[]
+  weaknesses: ExplanationItem[]
+  suggestions: string[]
+  matchedSkills: string[]
+  missingSkills: string[]
 }
 
 export interface DashboardStats {

@@ -6,6 +6,7 @@ import jobRoutes from './routes/jobs'
 import userRoutes from './routes/users'
 import bookmarkRoutes from './routes/bookmarks'
 import dashboardRoutes from './routes/dashboard'
+import applicationRoutes from './routes/applications'
 
 dotenv.config()
 
@@ -20,6 +21,7 @@ app.use('/api/jobs', jobRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/bookmarks', bookmarkRoutes)
 app.use('/api/dashboard', dashboardRoutes)
+app.use('/api/applications', applicationRoutes)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
 

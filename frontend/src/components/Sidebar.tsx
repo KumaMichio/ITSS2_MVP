@@ -1,23 +1,25 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Briefcase, Brain, ShieldCheck, Bookmark, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Briefcase, Brain, ShieldCheck, Bookmark, Settings, LogOut, Languages } from 'lucide-react'
 import { useStore } from '../store/useStore'
+import { useT } from '../lib/useT'
 import { cn } from '../lib/utils'
 
-const navItems = [
-  { label: 'Workspace', items: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/jobs', icon: Briefcase, label: 'Việc làm' },
-    { to: '/bookmarks', icon: Bookmark, label: 'Việc đã lưu' },
-  ]},
-  { label: 'Intelligence', items: [
-    { to: '/insights', icon: Brain, label: 'Match Insights' },
-    { to: '/trust', icon: ShieldCheck, label: 'Trust Scores' },
-  ]},
-]
-
 export default function Sidebar() {
-  const { user, clearAuth } = useStore()
+  const { user, clearAuth, lang, setLang } = useStore()
+  const t = useT()
   const navigate = useNavigate()
+
+  const navItems = [
+    { label: 'Workspace', items: [
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/jobs', icon: Briefcase, label: t.nav_jobs },
+      { to: '/bookmarks', icon: Bookmark, label: t.nav_saved },
+    ]},
+    { label: 'Intelligence', items: [
+      { to: '/insights', icon: Brain, label: 'Match Insights' },
+      { to: '/trust', icon: ShieldCheck, label: 'Trust Scores' },
+    ]},
+  ]
 
   function handleLogout() {
     clearAuth()
@@ -25,42 +27,42 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-56 bg-white border-r border-border flex flex-col z-20">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-border flex flex-col z-20">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
-            <Briefcase size={14} className="text-white" />
+      <div className="px-6 py-5 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0">
+            <Briefcase size={18} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground leading-tight">JobMatch JP</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Smart Hiring</p>
+            <p className="text-base font-bold text-foreground leading-tight">JobMatch JP</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Smart Hiring</p>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
+      <nav className="flex-1 overflow-y-auto py-5 px-4 space-y-6">
         {navItems.map(group => (
           <div key={group.label}>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
               {group.label}
             </p>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {group.items.map(item => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors',
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-primary/10 text-primary font-medium'
+                        ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                     )
                   }
                 >
-                  <item.icon size={16} />
+                  <item.icon size={18} />
                   {item.label}
                 </NavLink>
               ))}
@@ -70,36 +72,45 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border p-3 space-y-0.5">
+      <div className="border-t border-border p-4 space-y-1">
+        {/* Language toggle */}
+        <button
+          onClick={() => setLang(lang === 'en' ? 'ja' : 'en')}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+        >
+          <Languages size={18} />
+          {t.nav_lang_toggle}
+        </button>
+
         <NavLink
           to="/settings"
           className={({ isActive }) =>
             cn(
-              'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors',
+              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
               isActive
-                ? 'bg-primary/10 text-primary font-medium'
+                ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
             )
           }
         >
-          <Settings size={16} />
-          Cài đặt
+          <Settings size={18} />
+          {t.nav_settings}
         </NavLink>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
         >
-          <LogOut size={16} />
-          Đăng xuất
+          <LogOut size={18} />
+          {t.nav_signout}
         </button>
         {user && (
-          <div className="flex items-center gap-2 px-2.5 py-2 mt-1">
-            <div className="w-7 h-7 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
+          <div className="flex items-center gap-3 px-3 py-2.5 mt-1 bg-secondary rounded-xl">
+            <div className="w-8 h-8 rounded-full bg-primary text-white text-sm flex items-center justify-center font-semibold shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+              <p className="text-sm font-semibold text-foreground truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
           </div>
         )}

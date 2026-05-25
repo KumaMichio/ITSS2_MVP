@@ -13,14 +13,21 @@ export function formatSalary(min: number | null, max: number | null, _currency =
   return `~${fmt(max!)}`
 }
 
-export function timeAgo(dateStr: string) {
+export function timeAgo(dateStr: string, lang: 'en' | 'ja' = 'en') {
   const diff = Date.now() - new Date(dateStr).getTime()
   const days = Math.floor(diff / 86400000)
-  if (days === 0) return 'Hôm nay'
-  if (days === 1) return '1 ngày trước'
-  if (days < 7) return `${days} ngày trước`
-  if (days < 30) return `${Math.floor(days / 7)} tuần trước`
-  return `${Math.floor(days / 30)} tháng trước`
+  if (lang === 'ja') {
+    if (days === 0) return '今日'
+    if (days === 1) return '1日前'
+    if (days < 7) return `${days}日前`
+    if (days < 30) return `${Math.floor(days / 7)}週間前`
+    return `${Math.floor(days / 30)}ヶ月前`
+  }
+  if (days === 0) return 'Today'
+  if (days === 1) return '1 day ago'
+  if (days < 7) return `${days} days ago`
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`
+  return `${Math.floor(days / 30)} months ago`
 }
 
 export function matchColor(score: number) {

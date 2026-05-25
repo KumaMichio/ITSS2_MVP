@@ -75,6 +75,96 @@ export function calcMatchScore(
   }
 }
 
+export interface ExplanationItem {
+  criterion: string
+  detail: string
+}
+
+export interface MatchExplanation {
+  strengths: ExplanationItem[]
+  weaknesses: ExplanationItem[]
+  suggestions: string[]
+  matchedSkills: string[]
+  missingSkills: string[]
+}
+
+export function calcMatchExplanation(
+  userSkills: string[],
+  userJlpt: string | null,
+  userLocation: string | null,
+  userExpYears: number | null,
+  job: MatchInput & { title?: string }
+): MatchExplanation {
+  const strengths: ExplanationItem[] = []
+  const weaknesses: ExplanationItem[] = []
+  const suggestions: string[] = []
+
+  // Skills
+  const matchedSkills = job.requireSkills.filter(s =>
+    userSkills.some(u => u.toLowerCase() === s.toLowerCase())
+  )
+  const missingSkills = job.requireSkills.filter(s =>
+    !userSkills.some(u => u.toLowerCase() === s.toLowerCase())
+  )
+
+  if (job.requireSkills.length === 0) {
+    strengths.push({ criterion: 'skills', detail: 'Không có yêu cầu kỹ năng đặc biệt' })
+  } else if (missingSkills.length === 0) {
+    strengths.push({ criterion: 'skills', detail: `Có đủ tất cả kỹ năng yêu cầu: ${matchedSkills.join(', ')}` })
+  } else {
+    if (matchedSkills.length > 0)
+      strengths.push({ criterion: 'skills', detail: `Kỹ năng phù hợp: ${matchedSkills.join(', ')}` })
+    weaknesses.push({ criterion: 'skills', detail: `Thiếu kỹ năng: ${missingSkills.join(', ')}` })
+    suggestions.push(`Bổ sung ${missingSkills.slice(0, 2).join(', ')} để tăng điểm kỹ năng`)
+  }
+
+  // JLPT
+  if (!job.requireJlpt) {
+    strengths.push({ criterion: 'jlpt', detail: 'Job không yêu cầu JLPT' })
+  } else if (!userJlpt) {
+    weaknesses.push({ criterion: 'jlpt', detail: `Chưa khai báo JLPT, job yêu cầu ${job.requireJlpt}` })
+    suggestions.push(`Lấy chứng chỉ JLPT ${job.requireJlpt} để tăng điểm tiếng Nhật`)
+  } else {
+    const userRank = JLPT_RANK[userJlpt] ?? 5
+    const reqRank = JLPT_RANK[job.requireJlpt] ?? 5
+    if (userRank <= reqRank) {
+      strengths.push({ criterion: 'jlpt', detail: `JLPT ${userJlpt} đáp ứng yêu cầu ${job.requireJlpt}` })
+    } else {
+      weaknesses.push({ criterion: 'jlpt', detail: `JLPT ${userJlpt} chưa đủ, job yêu cầu ${job.requireJlpt} trở lên` })
+      suggestions.push(`Nâng chứng chỉ JLPT lên ${job.requireJlpt} để đáp ứng yêu cầu`)
+    }
+  }
+
+  // Location
+  if (!userLocation) {
+    weaknesses.push({ criterion: 'location', detail: 'Chưa khai báo địa điểm mong muốn' })
+    suggestions.push('Cập nhật địa điểm mong muốn trong hồ sơ để tính điểm chính xác hơn')
+  } else if (userLocation.toLowerCase() === job.location.toLowerCase()) {
+    strengths.push({ criterion: 'location', detail: `Địa điểm phù hợp: ${job.location}` })
+  } else {
+    weaknesses.push({ criterion: 'location', detail: `Bạn muốn làm ở ${userLocation}, job ở ${job.location}` })
+  }
+
+  // Experience
+  if (!job.requireExp) {
+    strengths.push({ criterion: 'experience', detail: 'Không yêu cầu kinh nghiệm cụ thể' })
+  } else if (userExpYears === null) {
+    weaknesses.push({ criterion: 'experience', detail: `Chưa khai báo kinh nghiệm, job yêu cầu ${job.requireExp} năm` })
+    suggestions.push('Cập nhật số năm kinh nghiệm trong hồ sơ')
+  } else {
+    const reqYears = parseInt(job.requireExp) || 0
+    if (userExpYears >= reqYears) {
+      strengths.push({ criterion: 'experience', detail: `${userExpYears} năm kinh nghiệm đáp ứng yêu cầu ${job.requireExp} năm` })
+    } else {
+      weaknesses.push({ criterion: 'experience', detail: `Có ${userExpYears} năm KN, yêu cầu ${job.requireExp} năm` })
+      if (reqYears - userExpYears > 0)
+        suggestions.push(`Cần thêm khoảng ${reqYears - userExpYears} năm kinh nghiệm`)
+    }
+  }
+
+  return { strengths, weaknesses, suggestions, matchedSkills, missingSkills }
+}
+
 export function calcTrustScore(company: {
   founded: number | null
   size: string | null

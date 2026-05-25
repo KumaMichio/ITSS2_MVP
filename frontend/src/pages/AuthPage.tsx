@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { Briefcase } from 'lucide-react'
 import api from '../lib/api'
 import { useStore } from '../store/useStore'
+import { useT } from '../lib/useT'
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [form, setForm] = useState({ email: '', password: '', name: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { setAuth, fetchBookmarks } = useStore()
+  const { setAuth, fetchBookmarks, fetchApplications } = useStore()
+  const t = useT()
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,11 +23,11 @@ export default function AuthPage() {
       const payload = mode === 'login' ? { email: form.email, password: form.password } : form
       const { data } = await api.post(endpoint, payload)
       setAuth(data.user, data.token)
-      await fetchBookmarks()
+      await Promise.all([fetchBookmarks(), fetchApplications()])
       navigate('/dashboard')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-      setError(typeof msg === 'string' ? msg : 'Đã có lỗi xảy ra')
+      setError(typeof msg === 'string' ? msg : t.auth_err_default)
     } finally {
       setLoading(false)
     }
@@ -47,19 +49,17 @@ export default function AuthPage() {
 
         <div className="bg-white rounded-2xl border border-border p-7 shadow-sm">
           <h1 className="text-xl font-bold text-foreground mb-1">
-            {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
+            {mode === 'login' ? t.auth_login : t.auth_register}
           </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            {mode === 'login'
-              ? 'Tìm việc IT tại Nhật phù hợp nhất với bạn'
-              : 'Bắt đầu hành trình tìm việc tại Nhật'}
+            {mode === 'login' ? t.auth_login_sub : t.auth_register_sub}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'register' && (
               <input
                 type="text"
-                placeholder="Họ và tên"
+                placeholder={t.auth_fullname}
                 value={form.name}
                 onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 required
@@ -68,7 +68,7 @@ export default function AuthPage() {
             )}
             <input
               type="email"
-              placeholder="Email"
+              placeholder={t.auth_email}
               value={form.email}
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               required
@@ -76,7 +76,7 @@ export default function AuthPage() {
             />
             <input
               type="password"
-              placeholder="Mật khẩu"
+              placeholder={t.auth_password}
               value={form.password}
               onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
               required
@@ -91,17 +91,17 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? 'Đang xử lý...' : mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
+              {loading ? t.auth_processing : mode === 'login' ? t.auth_login : t.auth_register}
             </button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}{' '}
+            {mode === 'login' ? t.auth_no_account : t.auth_has_account}{' '}
             <button
               onClick={() => { setMode(m => m === 'login' ? 'register' : 'login'); setError('') }}
               className="text-primary font-medium hover:underline"
             >
-              {mode === 'login' ? 'Đăng ký' : 'Đăng nhập'}
+              {mode === 'login' ? t.auth_signup : t.auth_login}
             </button>
           </p>
 

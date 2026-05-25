@@ -15,8 +15,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile   Profile?
-  bookmarks Bookmark[]
+  profile      Profile?
+  bookmarks    Bookmark[]
+  applications Application[]
 }
 
 model Profile {
@@ -67,7 +68,8 @@ model Job {
   benefits      String[]
   risks         String[]
 
-  bookmarks Bookmark[]
+  bookmarks    Bookmark[]
+  applications Application[]
 }
 
 model Bookmark {
@@ -77,6 +79,18 @@ model Bookmark {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+}
+
+model Application {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String
+  status    String   @default("pending")
+  appliedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobId])
 }
