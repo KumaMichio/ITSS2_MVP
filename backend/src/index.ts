@@ -25,6 +25,10 @@ app.use('/api/applications', applicationRoutes)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
-})
+export default app
+
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`)
+  })
+}
